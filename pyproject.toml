@@ -1,0 +1,13 @@
+[project]
+name = "corpus-engine"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11.9"
+dependencies = [
+    "langchain-text-splitters>=1.1.2",
+    "numpy>=2.4.6",
+    "typer>=0.26.5",
+]
+[project.scripts]
+engine = "corpusEngine.cli:app"
