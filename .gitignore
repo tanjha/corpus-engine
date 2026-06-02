@@ -1,0 +1,29 @@
+# Virtual environment
+.venv/
+venv/
+ 
+# ONNX model exports
+nomic_onnx/
+*.onnx
+ 
+# Vector index / database
+*.db
+.corpus/
+ 
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+ 
+# uv
+.uv/
+ 
+# Environment
+.env
+ 
+# OS
+.DS_Store
+Thumbs.db
