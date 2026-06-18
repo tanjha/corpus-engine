@@ -4,18 +4,24 @@ from pathlib import Path
 from datetime import datetime
 from .embed import embed_engine
 from .entryObj import entry
-from .dbManager import initSQL, insertAll
+from .dbManager import initSQL, insertFull
 from .vectorCheck import is_vectorizable
 
-config = {"chunk_size": 256, "overlap": 26}
+scale = 2
+config = {"chunk_size": 256 * scale, "overlap": 26 * scale}
+debug = False
 
 
-def setup(cwd: Path, debug: bool):
+def setup(cwd: Path, dbg: bool = False):
+    debug = dbg
     print("[INFO] Initializing Corpus Engine...")
     db = sqlite3.connect("corpusEngine.db")
     initSQL(db)
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=config["chunk_size"], chunk_overlap=config["overlap"]
+        chunk_size=config["chunk_size"],
+        chunk_overlap=config["overlap"],
+        separators=[""],
+        strip_whitespace=False,
     )
     embedder = embed_engine([])
     _lookDir(splitter=splitter, path=cwd, db=db, embedder=embedder)
@@ -37,7 +43,7 @@ def _lookDir(
     for item in path.iterdir():
         if item.is_dir():
             _lookDir(splitter, item, db, embedder, _seen)
-        elif is_vectorizable(item.suffix):
+        elif is_vectorizable(item):
             _splitFile(item, splitter, db, embedder)
 
 
@@ -51,10 +57,14 @@ def _splitFile(
     with open(file, "r") as f:
         raw_full = f.read()
     chunks = splitter.split_text(raw_full)
-    to_embed = [str]
-    entries = [entry]
+    to_embed = []
+    entries = []
+    line = 0
     for i, chunk in enumerate(chunks):
-        start_line, end_line = _generateLines(file, i)
+        start_line = line
+        line += chunk.count("\n")
+        end_line = line
+
         to_embed.append(chunk)
         ent = entry(
             path=file,
@@ -63,11 +73,13 @@ def _splitFile(
             time=time,
             raw_text=chunk,
         )
+        # ent.printAll()
         entries.append(ent)
     embedded = embedder.embedAll(to_embed)
     for chunk, ent in zip(embedded, entries):
         ent.embedding = chunk
-    insertAll(db, entries)
+    insertFull(db, entries)
+    print(f"[DEBUG] inserted all chunks of {file.name}")
 
 
 def _generateLines(file_path: Path, chunk_index: int) -> tuple[int, int]:

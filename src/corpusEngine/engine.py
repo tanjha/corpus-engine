@@ -8,17 +8,21 @@ app = typer.Typer(no_args_is_help=True)
 
 @app.command()
 def init(debug: Annotated[bool, typer.Option(help="Print debug logs")] = False):
-    from .setup import setup
-
     """Initialize engine into current directory."""
+    doInit(debug)
+
+
+def doInit(debug: bool = False):
     initialized = False
     cwd = Path.cwd()
+    # print(cwd)
     for item in cwd.iterdir():
-        if item.suffix == ".db" and item.name == "corpusEngine":
+        if item.name == "corpusEngine.db":
             initialized = True
-            print("Corpus Engine already initialized")
-
+            print("[INFO] Corpus Engine already initialized")
     if not initialized:
+        from .setup import setup
+
         setup(cwd, debug)
 
 
@@ -28,7 +32,18 @@ def update():
 
 
 @app.command()
+def reset(debug: Annotated[bool, typer.Option(help="Print debug logs")] = False):
+    """Remove Corpus Engine and reinitialize it."""
+    doRemove()
+    doInit(debug)
+
+
+@app.command()
 def remove():
+    doRemove()
+
+
+def doRemove():
     if os.path.exists("corpusEngine.db"):
         os.remove("corpusEngine.db")
         print("[INFO] Removed Corpus Engine")
