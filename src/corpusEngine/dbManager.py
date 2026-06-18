@@ -5,16 +5,21 @@ from .entryObj import entry
 
 
 def initSQL(db: sqlite3.Connection):
-    db.execute("""  CREATE TABLE chunks (
-                        id              INTEGER PRIMARY KEY,
-                        path            TEXT NOT NULL,
-                        file            TEXT NOT NULL,
-                        start_line      INTEGER,
-                        end_line        INTEGER,
-                        time_updated    TEXT
-                        raw_text        TEXT NOT NULL,
-                        embedding       BLOB NOT NULL
-                    ) """)
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS files (
+            path         TEXT PRIMARY KEY,
+            time_updated TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS chunks (
+            id         INTEGER PRIMARY KEY,
+            path       TEXT NOT NULL REFERENCES files(path),
+            start_line INTEGER,
+            end_line   INTEGER,
+            raw_text   TEXT NOT NULL,
+            embedding  BLOB NOT NULL
+        );
+    """)
     db.commit()
 
 

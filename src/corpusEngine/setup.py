@@ -5,8 +5,8 @@ from datetime import datetime
 from .embed import embed_engine
 from .entryObj import entry
 from .dbManager import initSQL, insertAll
+from .vectorCheck import is_vectorizable
 
-acceptedFiles = ["py", "txt"]
 config = {"chunk_size": 256, "overlap": 26}
 
 
@@ -31,7 +31,7 @@ def _lookDir(
         if item.is_dir():
             _lookDir(splitter, path)
         else:
-            if item.suffix in acceptedFiles:
+            if is_vectorizable(item.suffix):
                 _splitFile(item, splitter, db, embedder)
 
 
