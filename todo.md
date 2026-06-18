@@ -2,7 +2,7 @@
 
 ## Bugs
 - Nothing in db after init - why?
-
+- Init still fires with db file made
 
 ## Functionality
 - Add update
