@@ -10,7 +10,8 @@ def initSQL(db: sqlite3.Connection):
             path         TEXT PRIMARY KEY,
             time_updated TEXT NOT NULL
         );
-
+    """)
+    db.execute("""
         CREATE TABLE IF NOT EXISTS chunks (
             id         INTEGER PRIMARY KEY,
             path       TEXT NOT NULL REFERENCES files(path),
@@ -59,6 +60,7 @@ def _insert(
     raw_text: str,
     embedding: np.ndarray,
 ):
+    print(f"Inserting {raw_text}")
     db.execute(
         """INSERT INTO chunks (path, file, start_line, end_line, time_updated, raw_text, embedding)
            VALUES (?, ?, ?, ?, ?, ?, ?)""",

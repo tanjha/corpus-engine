@@ -10,15 +10,16 @@ from .vectorCheck import is_vectorizable
 config = {"chunk_size": 256, "overlap": 26}
 
 
-def setup():
-    db = sqlite3.connect("index.db")
+def setup(cwd: Path, debug: bool):
+    print("[INFO] Initializing Corpus Engine...")
+    db = sqlite3.connect("corpusEngine.db")
     initSQL(db)
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=config["chunk_size"], overlap=config["overlap"]
+        chunk_size=config["chunk_size"], chunk_overlap=config["overlap"]
     )
     embedder = embed_engine([])
-    cwd = Path.cwd()
-    _lookDir(splitter, cwd, db, embedder)
+    _lookDir(splitter=splitter, path=cwd, db=db, embedder=embedder)
+    print("[INFO] Finished initialization.")
 
 
 def _lookDir(
@@ -26,13 +27,18 @@ def _lookDir(
     path: Path,
     db: sqlite3.Connection,
     embedder: embed_engine,
+    _seen=None,
 ):
+    _seen = _seen if _seen is not None else set()
+    real = path.resolve()
+    if real in _seen:
+        return
+    _seen.add(real)
     for item in path.iterdir():
         if item.is_dir():
-            _lookDir(splitter, path)
-        else:
-            if is_vectorizable(item.suffix):
-                _splitFile(item, splitter, db, embedder)
+            _lookDir(splitter, item, db, embedder, _seen)
+        elif is_vectorizable(item.suffix):
+            _splitFile(item, splitter, db, embedder)
 
 
 def _splitFile(

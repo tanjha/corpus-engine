@@ -1,36 +1,36 @@
 import typer
-from typing_extensions import Annotated
 from pathlib import Path
-from .setup import setup
+from typing import Annotated
+import os
+
+app = typer.Typer(no_args_is_help=True)
 
 
-def do(
-    command: Annotated[
-        str,
-        typer.Argument(
-            help="Example Commands: \ninit (initialize engine into current directory) \nupdate (updates vector listings)"
-        ),
-    ] = "",
-):
-    match command.tolower():
-        case "init":
-            pass
-        case "update":
-            pass
+@app.command()
+def init(debug: Annotated[bool, typer.Option(help="Print debug logs")] = False):
+    from .setup import setup
 
-
-def init():
-    """ """
+    """Initialize engine into current directory."""
     initialized = False
     cwd = Path.cwd()
     for item in cwd.iterdir():
-        if item.suffix == ".toml" and item.name == "corpusEngine":
+        if item.suffix == ".db" and item.name == "corpusEngine":
             initialized = True
+            print("Corpus Engine already initialized")
 
     if not initialized:
-        setup(cwd)
+        setup(cwd, debug)
 
 
+@app.command()
 def update():
-    """ """
     pass
+
+
+@app.command()
+def remove():
+    if os.path.exists("corpusEngine.db"):
+        os.remove("corpusEngine.db")
+        print("[INFO] Removed Corpus Engine")
+    else:
+        print("[INFO] Corpus Engine not initialized")
