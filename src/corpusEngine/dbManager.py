@@ -15,21 +15,21 @@ def initSQL(db: sqlite3.Connection):
     db.execute("""
         CREATE TABLE IF NOT EXISTS chunks (
             id         INTEGER PRIMARY KEY,
-            file_id    INTEGER NOT NULL REFERENCES files(id),
+            file_id    INTEGER NOT NULL REFERENCES files(id) ON DELETE CASCADE,
             start_line INTEGER,
             end_line   INTEGER,
             raw_text   TEXT NOT NULL,
             embedding  BLOB NOT NULL
         );
     """)
-    db.execute("PRAGMA foreign_keys = ON")
     db.execute("CREATE INDEX IF NOT EXISTS idx_chunks_file_id ON chunks(file_id);")
+    db.execute("file_id INTEGER NOT NULL REFERENCES files(id) ON DELETE CASCADE")
     db.commit()
 
 
 def getEmbeddings(db: sqlite3.Connection):
     rows = db.execute("""
-        SELECT c.id, c.start_line, c.end_line, f.path, c.embedding
+        SELECT c.id, c.start_line, c.end_line, f.path, c.embedding, c.raw_text
         FROM chunks c
         JOIN files f ON c.file_id = f.id
     """)
@@ -40,6 +40,7 @@ def getEmbeddings(db: sqlite3.Connection):
             "end_line": row[2],
             "path": Path(row[3]),
             "embedding": np.frombuffer(row[4], dtype=np.float32),
+            "raw_text": str(row[5]),
         }
         for row in rows
     ]
@@ -63,6 +64,23 @@ def insertFull(db: sqlite3.Connection, entries: list[entry]):
         db.commit()
 
 
+def removeAll(db: sqlite3.Connection, paths: list[Path]):
+    for path in paths:
+        p = str(path)
+        fileId = _getFileId(db, path)
+        if fileId is not None:
+            db.execute("DELETE FROM files where path = ?", (p,))
+    db.commit()
+
+
+def removeFile(db: sqlite3.Connection, path: Path):
+    p = str(path)
+    fileId = _getFileId(db, path)
+    if fileId is not None:
+        db.execute("DELETE FROM files where path = ?", (p,))
+        db.commit()
+
+
 def _insertFile(
     db: sqlite3.Connection,
     path: Path,
@@ -79,9 +97,19 @@ def _insertFile(
 
 
 def _getFileId(db: sqlite3.Connection, path: Path) -> int:
-    p = str(path)  # see note below — not the Path object
-    db.execute("INSERT OR IGNORE INTO files (path) VALUES (?)", (p,))
-    return db.execute("SELECT id FROM files WHERE path = ?", (p,)).fetchone()[0]
+    p = str(path)
+    row = db.execute("SELECT id FROM files WHERE path = ?", (p,)).fetchone()
+    if row is None:
+        return row
+    return row[0]
+
+
+def getFileTime(db: sqlite3.Connection, path: Path):
+    p = str(path)
+    row = db.execute("SELECT time_updated FROM files where path = ?", (p,)).fetchone()
+    if row is None:
+        return row
+    return row[0]
 
 
 def _insertChunk(

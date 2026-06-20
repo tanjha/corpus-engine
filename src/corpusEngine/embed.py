@@ -1,4 +1,4 @@
-from sentence_transformers import SentenceTransformer
+from sentence_transformers import SentenceTransformer, util
 
 
 class embed_engine:
@@ -27,9 +27,14 @@ class embed_engine:
         )
         return embedding
 
-    def similarity(self, raw_question):
-        query_embed = self._embedQuery(raw_question)
-        similarity = self.model.similarity(query_embed, self.embeddings)
+    def similarityFull(self, query, embeddings):
+        for embed in embeddings:
+            embed["similarity"] = self._similarity(query, embed["embedding"])
+
+        return embeddings
+
+    def _similarity(self, query, embed):
+        similarity = util.cos_sim(query, embed)
         return similarity
 
     def setEmbed(self, embeddings):

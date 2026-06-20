@@ -21,14 +21,43 @@ def doInit(debug: bool = False):
             initialized = True
             print("[INFO] Corpus Engine already initialized")
     if not initialized:
-        from .setup import setup
+        from .worker import setup
 
         setup(cwd, debug)
 
 
 @app.command()
+def query(debug: Annotated[bool, typer.Option(help="Print debug logs")] = False):
+    initialized = False
+    cwd = Path.cwd()
+    # print(cwd)
+    for item in cwd.iterdir():
+        if item.name == "corpusEngine.db":
+            initialized = True
+
+    if initialized:
+        from .worker import query
+
+        query(debug)
+    else:
+        print("[INFO] Corpus Engine not initialized")
+
+
+@app.command()
 def update():
-    pass
+    initialized = False
+    cwd = Path.cwd()
+    # print(cwd)
+    for item in cwd.iterdir():
+        if item.name == "corpusEngine.db":
+            initialized = True
+
+    if initialized:
+        from .worker import updateEmbed
+
+        updateEmbed(cwd)
+    else:
+        print("[INFO] Corpus Engine not initialized")
 
 
 @app.command()

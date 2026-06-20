@@ -148,6 +148,7 @@ dependencies = [
     { name = "einops" },
     { name = "langchain-text-splitters" },
     { name = "numpy" },
+    { name = "scikit-learn" },
     { name = "sentence-transformers" },
     { name = "typer" },
 ]
@@ -157,6 +158,7 @@ requires-dist = [
     { name = "einops", specifier = ">=0.8.2" },
     { name = "langchain-text-splitters", specifier = ">=1.1.2" },
     { name = "numpy", specifier = ">=2.4.6" },
+    { name = "scikit-learn", specifier = ">=1.9.0" },
     { name = "sentence-transformers", specifier = ">=5.5.1" },
     { name = "typer", specifier = ">=0.26.5" },
 ]
