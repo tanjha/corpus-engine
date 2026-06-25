@@ -4,7 +4,7 @@ from pathlib import Path
 from datetime import datetime
 from .embed import embed_engine
 from .entryObj import entry
-from .dbManager import initSQL, insertFull, getEmbeddings, removeFile
+from .dbManager import dbManager
 from .vectorCheck import is_vectorizable
 
 scale = 2
@@ -15,8 +15,8 @@ debug = False
 def setup(cwd: Path, dbg: bool = False):
     debug = dbg
     print("[INFO] Initializing Corpus Engine...")
-    db = _initDB("corpusEngine.db")
-    initSQL(db)
+    dbM = _initDB("corpusEngine.db")
+    dbM.initSQL()
 
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=config["chunk_size"],
@@ -26,12 +26,12 @@ def setup(cwd: Path, dbg: bool = False):
     )
     embedder = embed_engine([])
 
-    _lookDir(splitter=splitter, path=cwd, db=db, embedder=embedder)
+    _lookDir(splitter=splitter, path=cwd, dbM=dbM, embedder=embedder)
     print("[INFO] Finished initialization.")
 
 
 def updateEmbed(cwd: Path, dbg: bool = False):
-    db = _initDB("corpusEngine.db")
+    dbM = _initDB("corpusEngine.db")
     embedder = embed_engine([])
 
     walked_dir = _listAll(cwd)
@@ -42,18 +42,18 @@ def updateEmbed(cwd: Path, dbg: bool = False):
     for path in paths:
         time = datetime.fromtimestamp(path.stat().st_mtime)
         if path not in db_rows:
-            _splitFile(path=Path(path), db=db, embedder=embedder)
+            _splitFile(path=Path(path), dbM=dbM, embedder=embedder)
         elif time != db_rows[path]:
-            removeFile()
-            _splitFile(path=Path(path), db=db, embedder=embedder)
+            dbM.removeFile()
+            _splitFile(path=Path(path), dbM=dbM, embedder=embedder)
     for removed in db_rows.keys() - paths:
-        removeFile(db, path(removed))
+        dbM.removeFile(path(removed))
 
 
 def query(debug: bool = False):
     print("Querying")
-    db = _initDB("corpusEngine.db")
-    embeddings = getEmbeddings(db)
+    dbM = _initDB("corpusEngine.db")
+    embeddings = dbM.getEmbeddings()
     embedder = embed_engine(embeddings)
     query = _getQuery(embedder)
     sim_embeddings = embedder.similarityFull(query, embeddings)
@@ -87,7 +87,7 @@ def _getQuery(embedder: embed_engine) -> str:
 def _lookDir(
     splitter: RecursiveCharacterTextSplitter,
     path: Path,
-    db: sqlite3.Connection,
+    dbM: dbManager,
     embedder: embed_engine,
     _seen=None,
 ):
@@ -100,9 +100,9 @@ def _lookDir(
     for item in path.iterdir():
         pathlist.append(item)
         if item.is_dir():
-            _lookDir(splitter, item, db, embedder, _seen)
+            _lookDir(splitter, item, dbM, embedder, _seen)
         elif is_vectorizable(item):
-            _splitFile(item, splitter, db, embedder)
+            _splitFile(item, splitter, dbM, embedder)
 
 
 def _listAll(
@@ -124,16 +124,16 @@ def _listAll(
     return paths
 
 
-def _initDB(connection: str) -> sqlite3.Connection:
+def _initDB(connection: str) -> dbManager:
     db = sqlite3.connect(connection)
     db.execute("PRAGMA foreign_keys = ON")
-    return db
+    return dbManager(db)
 
 
 def _splitFile(
     file: Path,
     splitter: RecursiveCharacterTextSplitter,
-    db: sqlite3.Connection,
+    dbM: dbManager,
     embedder: embed_engine,
 ):
     time = datetime.fromtimestamp(file.stat().st_mtime)
@@ -161,5 +161,5 @@ def _splitFile(
     embedded = embedder.embedAll(to_embed)
     for chunk, ent in zip(embedded, entries):
         ent.embedding = chunk
-    insertFull(db, entries)
+    dbM.insertFull(entries)
     print(f"[DEBUG] inserted all chunks of {file.name}")
