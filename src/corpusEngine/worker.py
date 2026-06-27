@@ -13,7 +13,7 @@ debug = False
 
 
 def setup(cwd: Path, dbg: bool = False):
-    debug = dbg
+    # debug = dbg
     print("[INFO] Initializing Corpus Engine...")
     dbM = _initDB("corpusEngine.db")
     dbM.initSQL()
@@ -33,21 +33,28 @@ def setup(cwd: Path, dbg: bool = False):
 def updateEmbed(cwd: Path, dbg: bool = False):
     dbM = _initDB("corpusEngine.db")
     embedder = embed_engine([])
-
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=config["chunk_size"],
+        chunk_overlap=config["overlap"],
+        separators=[""],
+        strip_whitespace=False,
+    )
     walked_dir = _listAll(cwd)
     paths = {str(p.absolute()) for p in walked_dir}
     db_rows = {
-        row[0]: row[1] for row in db.execute("SELECT path, time_updated FROM files")
+        row[0]: row[1]
+        for row in dbM.getDB().execute("SELECT path, time_updated FROM files")
     }
     for path in paths:
-        time = datetime.fromtimestamp(path.stat().st_mtime)
+        time = datetime.fromtimestamp(Path(path).stat().st_mtime)
         if path not in db_rows:
-            _splitFile(path=Path(path), dbM=dbM, embedder=embedder)
+            _splitFile(file=Path(path), splitter=splitter, dbM=dbM, embedder=embedder)
         elif time != db_rows[path]:
-            dbM.removeFile()
-            _splitFile(path=Path(path), dbM=dbM, embedder=embedder)
+            print("[INFO] Updating file")
+            dbM.removeFile(Path(path))
+            _splitFile(file=Path(path), splitter=splitter, dbM=dbM, embedder=embedder)
     for removed in db_rows.keys() - paths:
-        dbM.removeFile(path(removed))
+        dbM.removeFile(Path(removed))
 
 
 def query(debug: bool = False):

@@ -26,8 +26,9 @@ class dbManager:
                 embedding  BLOB NOT NULL
             );
         """)
-        self.db.execute("CREATE INDEX IF NOT EXISTS idx_chunks_file_id ON chunks(file_id);")
-        self.db.execute("file_id INTEGER NOT NULL REFERENCES files(id) ON DELETE CASCADE")
+        self.db.execute(
+            "CREATE INDEX IF NOT EXISTS idx_chunks_file_id ON chunks(file_id);"
+        )
         self.db.commit()
 
     def getEmbeddings(self):
@@ -48,15 +49,17 @@ class dbManager:
             for row in rows
         ]
 
+    def getDB(self) -> sqlite3.Connection:
+        return self.db
+
     def insertFull(self, entries: list[entry]):
         if entries:
-            self._insertFile(self.db, str(entries[0].path.absolute()), entries[0].time)
+            self._insertFile(str(entries[0].path.absolute()), entries[0].time)
             print(f"inserting {str(entries[0].path.absolute())}")
             self.db.commit()
             for ent in entries:
-                file_id = self._getFileId(self.db, str(ent.path.absolute()))
+                file_id = self._getFileId(str(ent.path.absolute()))
                 self._insertChunk(
-                    self.db,
                     file_id,
                     ent.start_line,
                     ent.end_line,
@@ -68,14 +71,14 @@ class dbManager:
     def removeAll(self, paths: list[Path]):
         for path in paths:
             p = str(path)
-            fileId = self._getFileId(self.db, path)
+            fileId = self._getFileId(path)
             if fileId is not None:
                 self.db.execute("DELETE FROM files where path = ?", (p,))
         self.db.commit()
 
     def removeFile(self, path: Path):
         p = str(path)
-        fileId = self._getFileId(self.db, path)
+        fileId = self._getFileId(path)
         if fileId is not None:
             self.db.execute("DELETE FROM files where path = ?", (p,))
             self.db.commit()

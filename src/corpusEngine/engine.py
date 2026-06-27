@@ -28,6 +28,7 @@ def doInit(debug: bool = False):
 
 @app.command()
 def query(debug: Annotated[bool, typer.Option(help="Print debug logs")] = False):
+    """Query directory using input - returns top 5 search results"""
     initialized = False
     cwd = Path.cwd()
     # print(cwd)
