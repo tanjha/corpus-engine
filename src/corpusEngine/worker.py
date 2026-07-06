@@ -67,6 +67,12 @@ def query(debug: bool = False):
     similarities = sorted(sim_embeddings, key=lambda x: x["similarity"], reverse=True)[
         :5
     ]
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=config["chunk_size"],
+        chunk_overlap=config["overlap"],
+        separators=[""],
+        strip_whitespace=False,
+    )
 
     for sim in similarities:
         similarity = sim["similarity"]
@@ -74,7 +80,11 @@ def query(debug: bool = False):
         start_line = sim["start_line"]
         end_line = sim["end_line"]
 
-        text = sim["raw_text"]
+        chunk_num = sim["chunk_num"]
+        with open(Path(path), "r") as f:
+            raw_full = f.read()
+        chunks = splitter.split_text(raw_full)
+        text = chunks[chunk_num]
         print(f"Similarity: {similarity.item():.4f}")
         print(f"File:       {path}")
         if int(start_line) == int(end_line):
@@ -161,7 +171,7 @@ def _splitFile(
             start_line=start_line,
             end_line=end_line,
             time=time,
-            raw_text=chunk,
+            chunk_num=i,
         )
         # ent.printAll()
         entries.append(ent)
