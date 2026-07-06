@@ -22,7 +22,7 @@ class dbManager:
                 file_id    INTEGER NOT NULL REFERENCES files(id) ON DELETE CASCADE,
                 start_line INTEGER,
                 end_line   INTEGER,
-                raw_text   TEXT NOT NULL,
+                chunk_num  INTEGER,
                 embedding  BLOB NOT NULL
             );
         """)
@@ -33,7 +33,7 @@ class dbManager:
 
     def getEmbeddings(self):
         rows = self.db.execute("""
-            SELECT c.id, c.start_line, c.end_line, f.path, c.embedding, c.raw_text
+            SELECT c.id, c.start_line, c.end_line, f.path, c.embedding, c.chunk_num
             FROM chunks c
             JOIN files f ON c.file_id = f.id
         """)
@@ -44,7 +44,7 @@ class dbManager:
                 "end_line": row[2],
                 "path": Path(row[3]),
                 "embedding": np.frombuffer(row[4], dtype=np.float32),
-                "raw_text": str(row[5]),
+                "chunk_num": int(row[5]),
             }
             for row in rows
         ]
@@ -63,7 +63,7 @@ class dbManager:
                     file_id,
                     ent.start_line,
                     ent.end_line,
-                    ent.raw_text,
+                    ent.chunk_num,
                     ent.embedding,
                 )
             self.db.commit()
@@ -118,17 +118,17 @@ class dbManager:
         file_id: int,
         start_line: int,
         end_line: int,
-        raw_text: str,
+        chunk_num: int,
         embedding: np.ndarray,
     ):
         self.db.execute(
-            """INSERT INTO chunks (file_id, start_line, end_line, raw_text, embedding)
+            """INSERT INTO chunks (file_id, start_line, end_line, chunk_num, embedding)
             VALUES (?, ?, ?, ?, ?)""",
             (
                 file_id,
                 start_line,
                 end_line,
-                raw_text,
+                chunk_num,
                 embedding.astype(np.float32).tobytes(),
             ),
         )
