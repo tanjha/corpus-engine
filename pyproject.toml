@@ -1,6 +1,6 @@
 [project]
 name = "corpus-engine_tanjha"
-version = "0.1.0"
+version = "0.1.1"
 description = "A CLI tool meant for directory text querying VIA text embedding"
 authors = [{name="Tanush Ojha",email="tanushojha057@gmail.com"}]
 readme = "README.md"
