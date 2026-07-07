@@ -1,7 +1,8 @@
 [project]
-name = "corpus-engine"
+name = "corpus-engine_tanjha"
 version = "0.1.0"
-description = "Add your description here"
+description = "A CLI tool meant for directory text querying VIA text embedding"
+authors = [{name="Tanush Ojha",email="tanushojha057@gmail.com"}]
 readme = "README.md"
 requires-python = ">=3.11.9"
 dependencies = [
@@ -12,5 +13,20 @@ dependencies = [
     "sentence-transformers>=5.5.1",
     "typer>=0.26.5",
 ]
+license= "MIT"
+license-files=["LICEN[CS]E*"]
+
 [project.scripts]
 engine = "corpusEngine.engine:app"
+
+[project.urls]
+Homepage = "https://github.com/tanjha/corpus-engine"
+Issues = "https://github.com/tanjha/corpus-engine/issues"
+
+
+[build-system]
+requires = ["uv_build >= 0.11.23, <0.12.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "corpusEngine"
